@@ -28,7 +28,7 @@ You can:
 | Encode  | Encode a string into BPE Tokens. Returns an array of Tokens. | - |
 | Decode  | Decode an array of BPE Tokens into a string. Returns a string. | - |
 | Count Tokens  | Count the tokens a string produces. Return a the number of tokens. | - |
-| Check Token Limit  | Wheather a given string exceeds a defined Token Limit. Returns a boolean. | Optional: Create an error if the Token Limit is exceeded. |
+| Check Token Limit  | Wheather a given string exceeds a defined Token Limit. Returns a boolean. | Optional: throw an error if the Token Limit is exceeded. |
 | Slice to Max Token Limit  | Slice the string into block which match exactly the provided token limit. Returns an array of strings. | - |
 
 ## Installation
