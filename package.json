@@ -1,19 +1,20 @@
 {
-  "name": "n8n-nodes-<...>",
+  "name": "n8n-nodes-gpt-tokenizer",
   "version": "0.1.0",
-  "description": "",
+  "description": "A n8n node to Tokenize the Input into byte pair sequence of integers in similar fashion as GPT models of OpenAI does",
   "keywords": [
     "n8n-community-node-package"
   ],
   "license": "MIT",
   "homepage": "",
   "author": {
-    "name": "",
-    "email": ""
+    "name": "geckse",
+    "email": "mail@geckse.de",
+    "homepage": "https://geckse.de"
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/<...>/n8n-nodes-<...>.git"
+    "url": "https://github.com/geckse/n8n-nodes-gpt-tokenizer.git"
   },
   "main": "index.js",
   "scripts": {
@@ -29,13 +30,9 @@
   ],
   "n8n": {
     "n8nNodesApiVersion": 1,
-    "credentials": [
-      "dist/credentials/ExampleCredentialsApi.credentials.js",
-      "dist/credentials/HttpBinApi.credentials.js"
-    ],
+    "credentials": [],
     "nodes": [
-      "dist/nodes/ExampleNode/ExampleNode.node.js",
-      "dist/nodes/HttpBin/HttpBin.node.js"
+      "dist/nodes/GPTTokenizerNode/GPTTokenizerNode.node.js"
     ]
   },
   "devDependencies": {
@@ -48,5 +45,8 @@
     "n8n-workflow": "*",
     "prettier": "^2.7.1",
     "typescript": "~4.8.4"
+  },
+  "dependencies": {
+    "gpt-tokenizer": "^1.0.4"
   }
 }
