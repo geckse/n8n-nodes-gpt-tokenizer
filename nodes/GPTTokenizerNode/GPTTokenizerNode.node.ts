@@ -7,7 +7,9 @@ import {
 } from 'n8n-workflow';
 
 import {
-	encode
+	encode,
+	decode,
+	isWithinTokenLimit
   } from 'gpt-tokenizer'
 
 export class GPTTokenizerNode implements INodeType {
@@ -16,23 +18,121 @@ export class GPTTokenizerNode implements INodeType {
 		name: 'gptTokenizer',
 		group: ['transform'],
 		version: 1,
-		icon: 'fa:hashtag',
-		description: 'Transforms text into Tokens like GPT',
+		icon: 'file:TokenIcon.svg',
+		description: 'Encode / decodes BPE Tokens or check Token Limits before working with the OpenAI GPT models.',
 		defaults: {
 			name: 'GPT-Tokenizer',
-			color: '#9d34da'
+			color: '#854AEB'
 		},
 		inputs: ['main'],
 		outputs: ['main'],
 		properties: [
 			{
+				displayName: 'Operation',
+				name: 'operation',
+				type: 'options',
+				noDataExpression: true,
+				displayOptions: {
+	
+				},
+				options: [
+					{
+						name: 'Encode',
+						value: 'encode',
+						description: 'Encode a string into BPE tokens. Returns an array of tokens.',
+						action: 'Encode a string into BPE tokens',
+					},
+					{
+						name: 'Decode',
+						value: 'decode',
+						description: 'Decode a Array of BPE tokens. Returns the decoded string string.',
+						action: 'Decode a string into BPE tokens',
+					},
+					{
+						name: 'Count Tokens',
+						value: 'countTokens',
+						description: 'Determines the amount of token of the string. Returns the number of tokens.',
+						action: 'Count tokens of a string',
+					},
+					{
+						name: 'Check Token Limit',
+						value: 'isWithinTokenLimit',
+						description: 'Check if the string is within the provided token limit. Returns true or false.',
+						action: 'Check if string is within token limit',
+					},
+					{
+						name: 'Slice to Max Token Limit',
+						value: 'sliceMatchingTokenLimit',
+						description: 'Slice the string into blocks with a max token limit. Returns an array of strings.',
+						action: 'Slice string into sections with a max token limit',
+					},						
+				],
+				default: 'encode',
+			},
+
+			{
 				displayName: 'Input String',
 				name: 'inputString',
 				type: 'string',
 				default: '',
-				placeholder: 'Something to tokenize',
-				description: 'Enter the string to be tokenized',
+				placeholder: '',
+				required: true,
+				description: 'String to process',
+				displayOptions: {
+					show: {
+						operation: ['encode', 'isWithinTokenLimit', 'sliceMatchingTokenLimit'],
+					},
+				},
 			},
+			{
+				displayName: 'Max Tokens',
+				name: 'maxTokens',
+				type: 'number',
+				default: '',
+				placeholder: '2048',
+				required: true,
+				description: 'The max number of tokens to allow',
+				displayOptions: {
+					show: {
+						operation: ['isWithinTokenLimit', 'sliceMatchingTokenLimit'],
+					},
+				},
+			},
+			{
+				displayName: 'Error when exceeding token limit',
+				name: 'errorTokenLimit',
+				type: 'boolean',
+				default: false,
+				placeholder: '',
+				description: 'Whether to throw an error when the string exceeds the token limit',
+				displayOptions: {
+					show: {
+						operation: ['isWithinTokenLimit'],
+					},
+				}
+			},
+			{
+				displayName: 'Input Tokens',
+				name: 'inputTokens',
+				type: 'string',
+				default: '',
+				required: true,
+				placeholder: '[5661,318,1337]',
+				description: 'Array of BPE tokens to decode',
+				displayOptions: {
+					show: {
+						operation: ['decode'],
+					},
+				},
+			},
+			{
+				displayName: 'Destination key',
+				name: 'destinationKey',
+				type: 'string',
+				default: '',
+				placeholder: '',
+				description: 'The key to write the results to. Leave empty to use default destination keys.',
+			}
 		],
 	};
 
@@ -41,13 +141,80 @@ export class GPTTokenizerNode implements INodeType {
 
 		let item: INodeExecutionData;
 		let inputString: string;
+		let inputTokens: number[];
+		let maxTokens: number;
+		let destinationKey: string;
+		let shouldThrowErrorOnTokenLimit: boolean;
+		const operation = this.getNodeParameter('operation', 0) as string;
 
 		for (let itemIndex = 0; itemIndex < items.length; itemIndex++) {
 			try {
 				inputString = this.getNodeParameter('inputString', itemIndex, '') as string;
+				inputTokens = this.getNodeParameter('inputTokens', itemIndex, null) as number[];
+				maxTokens = this.getNodeParameter('maxTokens', itemIndex, 2048) as number;
+				destinationKey = this.getNodeParameter('destinationKey', itemIndex, '') as string;
+				shouldThrowErrorOnTokenLimit = this.getNodeParameter('errorTokenLimit', itemIndex, false) as boolean;
 				item = items[itemIndex];
 
-				item.json['inputString'] = encode(inputString);
+				if (operation === 'encode') {
+					if(typeof inputString !== 'string') throw new Error('Input String is not a string');
+					if(!inputString) throw new Error('Input String field is empty');
+					if(!destinationKey) destinationKey = 'tokens';
+					item.json[destinationKey] = encode(inputString);
+				} else if (operation == 'decode'){
+					if(!destinationKey) destinationKey = 'data';
+					if(!Array.isArray(inputTokens)){
+						throw new Error('Input Tokens is not an array')
+					} else if(inputTokens.length == 0){
+						throw new Error('Input Tokens field is empty')
+					} else {
+						item.json[destinationKey] = decode(inputTokens);
+					}
+				} else if (operation == 'countTokens'){
+					if(typeof inputString !== 'string') throw new Error('Input String is not a string');
+					if(!inputString) throw new Error('Input String field is empty');
+					if(!destinationKey) destinationKey = 'tokenCount';
+					item.json[destinationKey] = encode(inputString).length;
+				} else if (operation == 'isWithinTokenLimit'){
+					if(typeof inputString !== 'string') throw new Error('Input String is not a string');
+					if(!inputString) throw new Error('Input String field is empty');
+					if(!destinationKey) destinationKey = 'isWithinTokenLimit';
+					if(maxTokens <= 0){
+						throw new Error('Provide Max Tokens. (bigger then 0)')
+					} else if(isWithinTokenLimit(inputString, maxTokens)){
+						item.json[destinationKey] = true;
+					} else {
+						item.json[destinationKey] = false;
+						if(shouldThrowErrorOnTokenLimit){
+							throw new Error('String exceeds token limit');
+						}
+					}
+				} else if (operation == 'sliceMatchingTokenLimit'){
+					if(!destinationKey) destinationKey = 'slices';
+					if(typeof inputString !== 'string') throw new Error('Input String is not a string');
+					if(!inputString) throw new Error('Input String field is empty');
+
+					if(maxTokens <= 0){
+						throw new Error('Provide Max Tokens. (bigger then 0)')
+					} else {
+
+						if(!isWithinTokenLimit(inputString, maxTokens)){
+							
+							let temporaryTokens = encode(inputString);
+							let blocks = [];
+							
+							for(let i = 0; i < temporaryTokens.length; i+=maxTokens){
+								blocks.push(decode(temporaryTokens.slice(i, i+maxTokens)));
+							}
+			
+							item.json[destinationKey] = blocks;
+						} else {
+							item.json[destinationKey] = [inputString];
+						}
+					}
+
+				}				
+
 			} catch (error) {
 
 				if (this.continueOnFail()) {
