@@ -12,7 +12,7 @@ import {
 	isWithinTokenLimit
   } from 'gpt-tokenizer'
 
-export class GPTTokenizerNode implements INodeType {
+export class GptTokenizer implements INodeType {
 	description: INodeTypeDescription = {
 		displayName: 'GPT-Tokenizer',
 		name: 'gptTokenizer',
@@ -22,7 +22,6 @@ export class GPTTokenizerNode implements INodeType {
 		description: 'Encode / decodes BPE Tokens or check Token Limits before working with the OpenAI GPT models.',
 		defaults: {
 			name: 'GPT-Tokenizer',
-			color: '#854AEB'
 		},
 		inputs: ['main'],
 		outputs: ['main'],
@@ -32,9 +31,7 @@ export class GPTTokenizerNode implements INodeType {
 				name: 'operation',
 				type: 'options',
 				noDataExpression: true,
-				displayOptions: {
-	
-				},
+				// eslint-disable-next-line n8n-nodes-base/node-param-options-type-unsorted-items
 				options: [
 					{
 						name: 'Encode',
@@ -45,13 +42,13 @@ export class GPTTokenizerNode implements INodeType {
 					{
 						name: 'Decode',
 						value: 'decode',
-						description: 'Decode a Array of BPE tokens. Returns the decoded string string.',
+						description: 'Decode an array of BPE tokens. Returns the decoded string.',
 						action: 'Decode a string into BPE tokens',
 					},
 					{
 						name: 'Count Tokens',
 						value: 'countTokens',
-						description: 'Determines the amount of token of the string. Returns the number of tokens.',
+						description: 'Determines the amount of tokens the string produces. Returns the number of tokens.',
 						action: 'Count tokens of a string',
 					},
 					{
@@ -64,12 +61,11 @@ export class GPTTokenizerNode implements INodeType {
 						name: 'Slice to Max Token Limit',
 						value: 'sliceMatchingTokenLimit',
 						description: 'Slice the string into blocks with a max token limit. Returns an array of strings.',
-						action: 'Slice string into sections with a max token limit',
+						action: 'Slice string into sections matching a max token limit',
 					},						
 				],
 				default: 'encode',
 			},
-
 			{
 				displayName: 'Input String',
 				name: 'inputString',
@@ -80,7 +76,7 @@ export class GPTTokenizerNode implements INodeType {
 				description: 'String to process',
 				displayOptions: {
 					show: {
-						operation: ['encode', 'isWithinTokenLimit', 'sliceMatchingTokenLimit'],
+						operation: ['encode', 'countTokens', 'isWithinTokenLimit', 'sliceMatchingTokenLimit'],
 					},
 				},
 			},
@@ -88,7 +84,7 @@ export class GPTTokenizerNode implements INodeType {
 				displayName: 'Max Tokens',
 				name: 'maxTokens',
 				type: 'number',
-				default: '',
+				default: 2048,
 				placeholder: '2048',
 				required: true,
 				description: 'The max number of tokens to allow',
@@ -99,7 +95,7 @@ export class GPTTokenizerNode implements INodeType {
 				},
 			},
 			{
-				displayName: 'Error when exceeding token limit',
+				displayName: 'Error When Exceeding Token Limit',
 				name: 'errorTokenLimit',
 				type: 'boolean',
 				default: false,
@@ -126,7 +122,7 @@ export class GPTTokenizerNode implements INodeType {
 				},
 			},
 			{
-				displayName: 'Destination key',
+				displayName: 'Destination Key',
 				name: 'destinationKey',
 				type: 'string',
 				default: '',
@@ -157,45 +153,100 @@ export class GPTTokenizerNode implements INodeType {
 				item = items[itemIndex];
 
 				if (operation === 'encode') {
-					if(typeof inputString !== 'string') throw new Error('Input String is not a string');
-					if(!inputString) throw new Error('Input String field is empty');
+					if(typeof inputString !== 'string') throw new NodeOperationError(
+						this.getNode(),
+						'Input String is not a string',
+						{ itemIndex: itemIndex },
+					);
+					if(!inputString) throw new NodeOperationError(
+						this.getNode(),
+						'Input String field is empty',
+						{ itemIndex: itemIndex },
+					);
+
 					if(!destinationKey) destinationKey = 'tokens';
 					item.json[destinationKey] = encode(inputString);
 				} else if (operation == 'decode'){
 					if(!destinationKey) destinationKey = 'data';
 					if(!Array.isArray(inputTokens)){
-						throw new Error('Input Tokens is not an array')
+						throw new NodeOperationError(
+							this.getNode(),
+							'Input Tokens is not an array',
+							{ itemIndex: itemIndex },
+						);
 					} else if(inputTokens.length == 0){
-						throw new Error('Input Tokens field is empty')
+						throw new NodeOperationError(
+							this.getNode(),
+							'Input Tokens field is empty',
+							{ itemIndex: itemIndex },
+						);
 					} else {
 						item.json[destinationKey] = decode(inputTokens);
 					}
 				} else if (operation == 'countTokens'){
-					if(typeof inputString !== 'string') throw new Error('Input String is not a string');
-					if(!inputString) throw new Error('Input String field is empty');
+					if(typeof inputString !== 'string') throw new NodeOperationError(
+						this.getNode(),
+						'Input String is not a string',
+						{ itemIndex: itemIndex },
+					);
+					if(!inputString) throw new NodeOperationError(
+						this.getNode(),
+						'Input String field is empty',
+						{ itemIndex: itemIndex },
+					);
+
 					if(!destinationKey) destinationKey = 'tokenCount';
 					item.json[destinationKey] = encode(inputString).length;
 				} else if (operation == 'isWithinTokenLimit'){
-					if(typeof inputString !== 'string') throw new Error('Input String is not a string');
-					if(!inputString) throw new Error('Input String field is empty');
+					if(typeof inputString !== 'string') throw new NodeOperationError(
+						this.getNode(),
+						'Input String is not a string',
+						{ itemIndex: itemIndex },
+					);
+					if(!inputString) throw new NodeOperationError(
+						this.getNode(),
+						'Input String field is empty',
+						{ itemIndex: itemIndex },
+					);
+
 					if(!destinationKey) destinationKey = 'isWithinTokenLimit';
 					if(maxTokens <= 0){
-						throw new Error('Provide Max Tokens. (bigger then 0)')
+						throw new NodeOperationError(
+							this.getNode(),
+							'Provide Max Tokens. (bigger then 0)',
+							{ itemIndex: itemIndex },
+						);
 					} else if(isWithinTokenLimit(inputString, maxTokens)){
 						item.json[destinationKey] = true;
 					} else {
 						item.json[destinationKey] = false;
 						if(shouldThrowErrorOnTokenLimit){
-							throw new Error('String exceeds token limit');
+							throw new NodeOperationError(
+								this.getNode(),
+								'String exceeds token limit',
+								{ itemIndex: itemIndex },
+							);
 						}
 					}
 				} else if (operation == 'sliceMatchingTokenLimit'){
 					if(!destinationKey) destinationKey = 'slices';
-					if(typeof inputString !== 'string') throw new Error('Input String is not a string');
-					if(!inputString) throw new Error('Input String field is empty');
+					if(typeof inputString !== 'string') throw new NodeOperationError(
+						this.getNode(),
+						'Input String is not a string',
+						{ itemIndex: itemIndex },
+					);
+					if(!inputString) throw new NodeOperationError(
+						this.getNode(),
+						'Input String field is empty',
+						{ itemIndex: itemIndex },
+					);
 
 					if(maxTokens <= 0){
-						throw new Error('Provide Max Tokens. (bigger then 0)')
+						throw new NodeOperationError(
+							this.getNode(),
+							'Provide Max Tokens. (bigger then 0)',
+							{ itemIndex: itemIndex },
+						);
 					} else {
 
 						if(!isWithinTokenLimit(inputString, maxTokens)){
