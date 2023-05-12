@@ -1,9 +1,15 @@
 {
   "name": "n8n-nodes-gpt-tokenizer",
-  "version": "0.1.0",
-  "description": "A n8n node to Tokenize the Input into byte pair sequence of integers in similar fashion as GPT models of OpenAI does",
+  "version": "0.1.1",
+  "description": "n8n node for working with BPE Tokens with OpenAI's GPT models in mind.",
   "keywords": [
-    "n8n-community-node-package"
+    "n8n-community-node-package",
+    "n8n",
+    "nodemation",
+    "n8n-node",
+    "gpt",
+    "bpe",
+    "tokenizer"
   ],
   "license": "MIT",
   "homepage": "",
