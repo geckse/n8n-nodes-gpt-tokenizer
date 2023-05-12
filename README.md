@@ -31,18 +31,18 @@ You can:
 
 ## Installation
 Follow the [installation guide](https://docs.n8n.io/integrations/community-nodes/installation/) in the n8n community nodes documentation.
-It also should automatical install this depency: https://www.npmjs.com/package/gpt-tokenizer, which is a port of the original BPE Token Python Library.
+It also should automatically install this depency: https://www.npmjs.com/package/gpt-tokenizer, which is a port of the original BPE Token Python Library.
 
 ## Compatibility
 
-The Latest Version of n8n. If you encounter any problem, feel free to [open an issue](https://github.com/geckse/n8n-nodes-ninox) on Github. 
+The Latest Version of n8n. If you encounter any problem, feel free to [open an issue](https://github.com/geckse/n8n-nodes-gpt-tokenizer) on Github. 
 
 ## About
 
 <img src="https://let-the-work-flow.com/content/uploads/logo-let-the-work-flow-signet-quad-150x150.png" align="left" height="74" width="74"> 
 <br>
 Hi I'm geckse and I let your work flow! 👋 
-I hope you are enyoing these nodes. If you are in need of a smooth automation, steady integration or custom code check my page: https://let-the-work-flow.com
+I hope you are enjoying these nodes. If you are in need of a smooth automation, steady integration or custom code check my page: https://let-the-work-flow.com
 
 ## Version History
 
